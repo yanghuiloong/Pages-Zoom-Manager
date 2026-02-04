@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Pages Zoom Manager",
+  "version": "1.0",
+  "description": "自定义浏览器页面缩放",
+  "permissions": [
+    "tabs",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "设置缩放规则",
+    "default_icon": "icon.png" 
+  },
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
