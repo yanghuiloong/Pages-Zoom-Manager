@@ -16,16 +16,26 @@ function loadRules() {
 // 启动时加载
 loadRules();
 
-// ★核心改进★：自动监听存储变化
-// 只要 popup.js 保存了数据，这里就会自动触发，无需手动发消息
+// ★Core Improvement★: Auto-listen for storage changes
+// Whenever popup.js saves data, this will trigger automatically
 chrome.storage.onChanged.addListener((changes, namespace) => {
   if (namespace === 'sync' && changes.zoomRules) {
-    loadRules();
-    // 规则更新后，尝试刷新当前活动标签页的缩放
-    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+    // Get the NEW rules directly from the change event (not from async loadRules)
+    const newRules = changes.zoomRules.newValue || [];
+
+    // Update cache immediately
+    cachedRules = newRules;
+    cachedRules.sort((a, b) => b.url.length - a.url.length);
+    console.log("【ZoomManager】规则库已更新:", cachedRules);
+
+    // Apply zoom to current active tab using the NEW rules
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0] && tabs[0].url) {
-         const target = matchUrlToZoom(tabs[0].url);
-         if (target) applyZoomSafe(tabs[0].id, target);
+        // Use updated cachedRules to find the matching zoom
+        const target = matchUrlToZoom(tabs[0].url);
+        if (target !== null) {
+          applyZoomSafe(tabs[0].id, target);
+        }
       }
     });
   }
@@ -46,7 +56,7 @@ function matchUrlToZoom(url) {
 function applyZoomSafe(tabId, targetZoom) {
   // 设置模式：自动 + 单标签页隔离
   chrome.tabs.setZoomSettings(tabId, {
-    mode: 'automatic', 
+    mode: 'automatic',
     scope: 'per-tab'
   }, () => {
     if (chrome.runtime.lastError) return;
